@@ -1,0 +1,21 @@
+---
+title: '**DC3: Final Report**'
+author: "Marium Tapal, Eleni Partakki, Lauren Low, Elisabeth Nesmith, Joyce Huang"
+date: "23 March 2021"
+output: 
+  html_document:
+    code_folding: hide
+    theme: sandstone
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE
+)
+```
+
+```{r packages, message=FALSE}
+library(tidyverse)
+```
+
