@@ -1,0 +1,33 @@
+---
+title: "epartakki"
+author: "Eleni Partakki"
+date: "3/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r packages, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(janitor)
+```
+
+```{r load-data, message=FALSE}
+meteorological_data <- read_xlsx("~/Downloads/DC3-data/Sensor Data/Meteorological Data.xlsx")
+sensor_data <- read_xlsx("~/Downloads/DC3-data/Sensor Data/Sensor Data.xlsx")
+lekagul_sensor_data <- read_csv("~/Downloads/DC3-data/Traffic Data/Lekagul Sensor Data.csv")
+```
+
+```{r data-cleaning}
+meteorological_data <- meteorological_data %>%
+  clean_names() %>%
+  select(-x4)
+sensor_data <- sensor_data %>% clean_names()
+lekagul_sensor_data <- lekagul_sensor_data %>%
+  clean_names() %>%
+  mutate(car_type = as.factor(car_type))
+```
