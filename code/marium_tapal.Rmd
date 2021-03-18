@@ -9,12 +9,13 @@ output: html_document
 library(tidyverse)
 library(readxl)
 library(janitor)
+library(here)
 ```
 
 ```{r load-data, message=FALSE}
-meteorological_data <- read_xlsx("~/Downloads/DC3-data/Sensor Data/Meteorological Data.xlsx")
-sensor_data <- read_xlsx("~/Downloads/DC3-data/Sensor Data/Sensor Data.xlsx")
-lekagul_sensor_data <- read_csv("~/Downloads/DC3-data/Traffic Data/Lekagul Sensor Data.csv")
+meteorological_data <- read_xlsx(here("data", "Sensor Data", "Meteorological Data.xlsx"))
+sensor_data <- read_xlsx(here("data", "Sensor Data", "Sensor Data.xlsx"))
+lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Data.csv"))
 ```
 
 ```{r data-cleaning}
