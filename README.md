@@ -19,3 +19,6 @@ There are two main components to our analysis:
     `code\...`
 
 GitHub repo: <https://github.com/mariumtapal/sds235-dc3>
+
+Acknowledgment: The `data` was prepared by Pacific Northwest National
+Laboratory as part of the VAST Challenge 2017.
