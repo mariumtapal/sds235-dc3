@@ -68,7 +68,7 @@ d1 <- sensor_data %>% filter(chemical == "Methylosmolene" & reading >= 4)
 ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) + geom_point())
 ```
 
-Most of the higher readings are coming from monitor 6!
+Most of the higher readings are coming from monitor 6 in April and December! Not in September though - why?
 
 
 ### AGOC-3A
