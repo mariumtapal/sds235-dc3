@@ -16,9 +16,14 @@ sensor_data <- read_xlsx(here("data", "Sensor Data", "Sensor Data.xlsx"))
 lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Data.csv"))
 ```
 
+```{r renaiming columns in lekagul_sensor_data}
+lekagul_sensor_data <- lekagul_sensor_data %>%
+  rename(id = "car-id", type = "car-type")
+```
+
+
 ```{r finding and visualizing most common vehicle types}
 common_type <- lekagul_sensor_data %>%
-  rename(type = "car-type") %>%
   group_by(type) %>%
   count(type)
 common_type
@@ -31,15 +36,21 @@ common_vehicle_type
 
 ```{r finding and visualizing most common vehicle id}
 common_id <- lekagul_sensor_data %>%
-  rename(id = "car-id") %>%
   count(id, sort = TRUE) %>%
   slice(1:10) %>%
-  filter(rank(desc(n))>0)
+  filter(rank(desc(n)) > 0)
 common_id
 
 common_vehicle_id <- ggplot(common_id, aes(x = reorder(id, -n), y = n))+
   geom_bar(stat = "identity") +
-  labs(title = "Most Common Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") + 
+  labs(title = "Top Ten Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") + 
   theme(axis.text.x = element_text(angle = 270))
 common_vehicle_id
 ```
+
+```{r}
+id_20154519024544_322 <- lekagul_sensor_data %>%
+  filter(id == "20154519024544-322")
+id_20154519024544_322
+```
+
