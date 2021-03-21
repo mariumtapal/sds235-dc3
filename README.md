@@ -9,7 +9,6 @@ Group Members:
 -   Eleni Partakki
 -   Elisabeth Nesmith
 -   Lauren Low
--   Joyce Huang
 
 There are two main components to our analysis:
 

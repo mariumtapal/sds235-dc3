@@ -5,6 +5,16 @@ date: "3/17/2021"
 output: html_document
 ---
 
+## Must add changes
+
+## Questions to answer
+
+a. Some activities may deviate from an established pattern, or are just difficult to explain from what you know of a situation. Describe any unusual patterns (either single day or multiple days) and highlight why you find them unusual.
+b. What are the top 3 patterns you discovered that you suspect could be most impactful to bird life in the preserve?
+c. Turning your attention to the sensor data, characterize the sensors’ performance and operation. - Are they all working properly?
+d. Can you detect any unexpected behaviors of the sensors through analyzing the readings they capture?
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -31,3 +41,6 @@ lekagul_sensor_data <- lekagul_sensor_data %>%
   clean_names() %>%
   mutate(car_type = as.factor(car_type))
 ```
+
+# Acknowledgements
+This dataset was prepared by Pacific Northwest National Laboratory as part of the VAST Challenge 2017.
