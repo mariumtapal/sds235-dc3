@@ -10,20 +10,112 @@ library(tidyverse)
 library(readxl)
 library(janitor)
 library(here)
+library(lubridate)
+library(plotly)
+library(mosaic)
+library(datapasta)
+library(patchwork)
 ```
 
 ```{r load-data, message=FALSE}
+# loading in data
 meteorological_data <- read_xlsx(here("data", "Sensor Data", "Meteorological Data.xlsx"))
 sensor_data <- read_xlsx(here("data", "Sensor Data", "Sensor Data.xlsx"))
 lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Data.csv"))
 ```
 
 ```{r data-cleaning}
+# basic data cleaning 
 meteorological_data <- meteorological_data %>%
   clean_names() %>%
   select(-x4)
-sensor_data <- sensor_data %>% clean_names()
+sensor_data <- sensor_data %>% clean_names() %>% mutate(monitor = as.factor(monitor))
 lekagul_sensor_data <- lekagul_sensor_data %>%
   clean_names() %>%
   mutate(car_type = as.factor(car_type))
 ```
+
+I'm choosing to focus on the last two bullet points in the objectives:
+
+- Turning your attention to the sensor data, characterize the sensors’ performance and operation. 
+    - Are they all working properly?
+    - Can you detect any unexpected behaviors of the sensors through analyzing the readings they capture?
+- What about the chemicals themselves?
+    - Which chemicals are being detected by the sensor group?
+    - What patterns of chemical releases do you see?
+    - Which factories are responsible for which chemical releases?
+    - For the factories you identified, describe any observed patterns of operation revealed in the data.
+
+
+# Which chemicals are being detected by the sensor group?
+
+```{r}
+sensor_data <- sensor_data %>% mutate(month = month(date_time))
+
+p1 <- sensor_data %>% group_by(chemical) %>% 
+  ggplot(aes(x = date_time, y = reading, color = chemical)) + geom_line(aes(group = chemical), alpha = 0.4) + labs(title = "Sensor Readings by Chemical Type", x = "Month", y = "Monitor Reading")
+ggplotly(p1)
+```
+
+Through a first look, the readings of AGOC-3A and Methylosmolene seem very volatile compared to the other two. Looking into the these, to find out more information:
+
+
+### Methylosmolene
+
+From the `plotly` graph above, it looks like an average reading for Methylosmolene is about 4 parts per million. For the sake of computational power, I am filtering to check for monitors
+``` {r}
+d1 <- sensor_data %>% filter(chemical == "Methylosmolene" & reading >= 4)
+ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) + geom_point())
+```
+
+Most of the higher readings are coming from monitor 6!
+
+
+### AGOC-3A
+
+Similar to Methylosmolene, the average reading also looks like about 4 parts per million.
+``` {r}
+d2 <- sensor_data %>% filter(chemical == "AGOC-3A" & reading >= 4)
+ggplotly(ggplot(d2, aes(x = date_time, y = reading, color = monitor)) + geom_point())
+```
+
+Again, a lot of the higher readings are at monitor 6, especially in April!
+
+# Finances
+
+In a different aspect of things, I looked into the finances from the bi-annual newsletters! I compiled the information in a spreadsheet and used the `datapasta` package add-in to make the dataframe below. I then, plotted the earnings per share for each company.
+
+```{r}
+# create data frame with {datapasta} addin
+finance <- data.frame(
+  stringsAsFactors = FALSE,
+              Year = c("2012-12-01",
+                       "2013-03-01","2013-06-01","2013-10-01","2013-12-01",
+                        "2014-03-01", "2014-06-01","2014-10-01","2014-12-01",
+                        "2015-03-01","2015-06-01","2015-10-01","2015-12-01",
+                       "2016-03-01","2016-06-01","2016-10-01"),
+               Indigo = c(4.32,3.56,2.95,3.28,
+                          4.5,4.16,3.26,3.87,4.91,3.83,3.65,4.24,5.21,
+                          4.74,4.21,4.57),
+               Kasios = c(6.24,6.37,6.17,5.49,
+                          5.23,4.92,4.18,3.25,2.65,2.94,3.48,4.9,5.61,
+                          6.84,7.23,7.85),
+             Radiance = c(7.18,7.32,7.09,7.21,
+                          7.37,7.63,7.29,8.02,7.53,4.18,4.36,4.22,4.89,
+                          4.71,5.03,5.13),
+           Roadrunner = c(5.53,5.81,6.34,6.73,
+                          7.14,6.92,6.84,6.95,6.69,6.74,6.53,6.71,6.82,
+                          6.59,6.71,6.68)
+   )
+finance$Year <- parse_date_time(finance$Year, "Ymd")
+
+# plot
+Indigo <- ggplot(finance, aes(x = Year, y = Indigo)) + geom_line()
+Kasios <- ggplot(finance, aes(x = Year, y = Kasios)) + geom_line()
+Radiance <- ggplot(finance, aes(x = Year, y = Radiance)) + geom_line()
+Roadrunner <- ggplot(finance, aes(x = Year, y = Roadrunner)) + geom_line()
+Indigo + Kasios + Radiance + Roadrunner + plot_annotation(title = "Quaterly Earnings per Share ($) by Company")
+
+```
+
+There is a steep fall and rise in the **Kasios Company**, which makes us believe that there is something wrong. The other companies have a constant increase or a decline, which seems normal!
