@@ -25,11 +25,13 @@ lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Dat
 ```
 
 ```{r data-cleaning}
-# basic data cleaning 
+# basic data cleaning
 meteorological_data <- meteorological_data %>%
   clean_names() %>%
   select(-x4)
-sensor_data <- sensor_data %>% clean_names() %>% mutate(monitor = as.factor(monitor))
+sensor_data <- sensor_data %>%
+  clean_names() %>%
+  mutate(monitor = as.factor(monitor))
 lekagul_sensor_data <- lekagul_sensor_data %>%
   clean_names() %>%
   mutate(car_type = as.factor(car_type))
@@ -52,31 +54,63 @@ I'm choosing to focus on the last two bullet points in the objectives:
 ```{r}
 sensor_data <- sensor_data %>% mutate(month = month(date_time))
 
-p1 <- sensor_data %>% group_by(chemical) %>% 
-  ggplot(aes(x = date_time, y = reading, color = chemical)) + geom_line(aes(group = chemical), alpha = 0.4) + labs(title = "Sensor Readings by Chemical Type", x = "Month", y = "Monitor Reading")
+p1 <- sensor_data %>%
+  group_by(chemical) %>%
+  ggplot(aes(x = date_time, y = reading, color = chemical)) +
+  geom_line(aes(group = chemical), alpha = 0.4) +
+  labs(title = "Sensor Readings by Chemical Type", x = "Month", y = "Monitor Reading")
 ggplotly(p1)
 ```
 
-Through a first look, the readings of AGOC-3A and Methylosmolene seem very volatile compared to the other two. Looking into the these, to find out more information:
+Through a first look, the readings of AGOC-3A and Methylosmolene seem very volatile compared to the other two. To make sure that this actually true, here are the summary statistics for the chemical readings.
 
+## Summary Stats for the Chemical Readings
+```{r}
+# make subsetted datasets for summary stats
+methylosmolene <- sensor_data %>% filter(chemical == "Methylosmolene")
+agoc3a <- sensor_data %>% filter(chemical == "AGOC-3A")
+chlorodinine <- sensor_data %>% filter(chemical == "Chlorodinine")
+appluimonia <- sensor_data %>% filter(chemical == "Appluimonia")
+
+# make dataframe of summary stats
+summary_stats <- rbind(fav_stats(methylosmolene$reading), fav_stats(agoc3a$reading), fav_stats(chlorodinine$reading), fav_stats(appluimonia$reading))
+
+# add chemical name manually
+summary_stats <- summary_stats %>% mutate(chemical = c("Methylosmolene", "AGOC-3A", "Chlorodinine", "Appluimonia"))
+
+# calculate range
+summary_stats <- summary_stats %>% mutate(range = max - min)
+
+# reorder columns
+summary_stats <- summary_stats[, c(10, 11, 1, 2, 3, 4, 5, 6, 7, 8, 9)]
+
+# print stats
+summary_stats %>%
+  select(-c(n, missing)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_minimal(full_width = FALSE)
+```
+
+Therefore, we are now looking into these two chemicals to find out more information:
 
 ### Methylosmolene
 
 From the `plotly` graph above, it looks like an average reading for Methylosmolene is about 4 parts per million. For the sake of computational power, I am filtering to check for monitors
 ``` {r}
 d1 <- sensor_data %>% filter(chemical == "Methylosmolene" & reading >= 4)
-ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) + geom_point())
+ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) +
+  geom_point())
 ```
 
-Most of the higher readings are coming from monitor 6!
-
+Most of the higher readings are coming from monitor 6 in April and December! Not in September though - why?
 
 ### AGOC-3A
 
 Similar to Methylosmolene, the average reading also looks like about 4 parts per million.
 ``` {r}
 d2 <- sensor_data %>% filter(chemical == "AGOC-3A" & reading >= 4)
-ggplotly(ggplot(d2, aes(x = date_time, y = reading, color = monitor)) + geom_point())
+ggplotly(ggplot(d2, aes(x = date_time, y = reading, color = monitor)) +
+  geom_point())
 ```
 
 Again, a lot of the higher readings are at monitor 6, especially in April!
@@ -89,33 +123,46 @@ In a different aspect of things, I looked into the finances from the bi-annual n
 # create data frame with {datapasta} addin
 finance <- data.frame(
   stringsAsFactors = FALSE,
-              Year = c("2012-12-01",
-                       "2013-03-01","2013-06-01","2013-10-01","2013-12-01",
-                        "2014-03-01", "2014-06-01","2014-10-01","2014-12-01",
-                        "2015-03-01","2015-06-01","2015-10-01","2015-12-01",
-                       "2016-03-01","2016-06-01","2016-10-01"),
-               Indigo = c(4.32,3.56,2.95,3.28,
-                          4.5,4.16,3.26,3.87,4.91,3.83,3.65,4.24,5.21,
-                          4.74,4.21,4.57),
-               Kasios = c(6.24,6.37,6.17,5.49,
-                          5.23,4.92,4.18,3.25,2.65,2.94,3.48,4.9,5.61,
-                          6.84,7.23,7.85),
-             Radiance = c(7.18,7.32,7.09,7.21,
-                          7.37,7.63,7.29,8.02,7.53,4.18,4.36,4.22,4.89,
-                          4.71,5.03,5.13),
-           Roadrunner = c(5.53,5.81,6.34,6.73,
-                          7.14,6.92,6.84,6.95,6.69,6.74,6.53,6.71,6.82,
-                          6.59,6.71,6.68)
-   )
+  Year = c(
+    "2012-12-01",
+    "2013-03-01", "2013-06-01", "2013-10-01", "2013-12-01",
+    "2014-03-01", "2014-06-01", "2014-10-01", "2014-12-01",
+    "2015-03-01", "2015-06-01", "2015-10-01", "2015-12-01",
+    "2016-03-01", "2016-06-01", "2016-10-01"
+  ),
+  Indigo = c(
+    4.32, 3.56, 2.95, 3.28,
+    4.5, 4.16, 3.26, 3.87, 4.91, 3.83, 3.65, 4.24, 5.21,
+    4.74, 4.21, 4.57
+  ),
+  Kasios = c(
+    6.24, 6.37, 6.17, 5.49,
+    5.23, 4.92, 4.18, 3.25, 2.65, 2.94, 3.48, 4.9, 5.61,
+    6.84, 7.23, 7.85
+  ),
+  Radiance = c(
+    7.18, 7.32, 7.09, 7.21,
+    7.37, 7.63, 7.29, 8.02, 7.53, 4.18, 4.36, 4.22, 4.89,
+    4.71, 5.03, 5.13
+  ),
+  Roadrunner = c(
+    5.53, 5.81, 6.34, 6.73,
+    7.14, 6.92, 6.84, 6.95, 6.69, 6.74, 6.53, 6.71, 6.82,
+    6.59, 6.71, 6.68
+  )
+)
 finance$Year <- parse_date_time(finance$Year, "Ymd")
 
 # plot
-Indigo <- ggplot(finance, aes(x = Year, y = Indigo)) + geom_line()
-Kasios <- ggplot(finance, aes(x = Year, y = Kasios)) + geom_line()
-Radiance <- ggplot(finance, aes(x = Year, y = Radiance)) + geom_line()
-Roadrunner <- ggplot(finance, aes(x = Year, y = Roadrunner)) + geom_line()
+Indigo <- ggplot(finance, aes(x = Year, y = Indigo)) +
+  geom_line()
+Kasios <- ggplot(finance, aes(x = Year, y = Kasios)) +
+  geom_line()
+Radiance <- ggplot(finance, aes(x = Year, y = Radiance)) +
+  geom_line()
+Roadrunner <- ggplot(finance, aes(x = Year, y = Roadrunner)) +
+  geom_line()
 Indigo + Kasios + Radiance + Roadrunner + plot_annotation(title = "Quaterly Earnings per Share ($) by Company")
-
 ```
 
 There is a steep fall and rise in the **Kasios Company**, which makes us believe that there is something wrong. The other companies have a constant increase or a decline, which seems normal!
