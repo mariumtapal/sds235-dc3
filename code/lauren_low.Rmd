@@ -105,12 +105,12 @@ day_20154519024544_322 <- lekagul_dateparse %>%
   filter(id == "20154519024544-322") 
 day_20154519024544_322
 
-#subtracting consecutive dates to see number of days between each movement
+# subtracting consecutive dates to see number of days between each movement
 diff_day_20154519024544_322 <- day_20154519024544_322 %>%
     mutate(day_diff = day - lag(day))
 diff_day_20154519024544_322
 
-
+# accounting for changes in month
 diff_day_20154519024544_322$day_diff[30] = 4
 diff_day_20154519024544_322$day_diff[111] = 4
 diff_day_20154519024544_322$day_diff[192] = 5
@@ -118,6 +118,7 @@ diff_day_20154519024544_322$day_diff[264] = 4
 diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
 diff_day_20154519024544_322
 
+# visualizing
 diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, y = day_diff))+
   geom_bar(stat = "identity") +
   labs(title = "Number of Days Between Movement for ID 20154519024544-322", 
@@ -128,4 +129,45 @@ diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, 
 diffday_20154519024544_322
 ```
 
+```{r}
+dateparse_20154112014114_381 <- lekagul_dateparse %>%
+  filter(id == "20154112014114-381") %>%
+  count(date, sort = TRUE) %>%
+  filter(rank(desc(n)) > 0)
+dateparse_20154112014114_381
+
+common_date_20154112014114_381 <- ggplot(dateparse_20154112014114_381, aes(x = reorder(date, -n), y = n))+
+  geom_bar(stat = "identity") +
+  labs(title = "Dates with Most Frequent Travel for ID 20154112014114-381", x = "Date", y = "Number of Locations Visited") + 
+  theme(axis.text.x = element_text(angle = 270))
+common_date_20154112014114_381
+
+# making day column and converting it to integer value
+day_20154112014114_381 <- lekagul_dateparse %>%
+  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = as.integer(day)) %>%
+  filter(id == "20154112014114-381") 
+day_20154112014114_381
+
+# subtracting consecutive dates to see number of days between each movement
+diff_day_20154112014114_381 <- day_20154112014114_381 %>%
+    mutate(day_diff = day - lag(day))
+diff_day_20154112014114_381
+
+# accounting for changes in month
+diff_day_20154112014114_381$day_diff[43] = 5
+diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
+
+diff_day_20154112014114_381
+
+# visualizing
+diff_day_20154112014114_381 <- ggplot(diff_day_20154112014114_381, aes(x = date, y = day_diff))+
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Days Between Movement for ID 20154112014114-381", 
+       x = "Date", 
+       y = "Number of Days Between Movement",
+       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
+  theme(axis.text.x = element_text(angle = 270)) 
+diff_day_20154112014114_381
+```
 
