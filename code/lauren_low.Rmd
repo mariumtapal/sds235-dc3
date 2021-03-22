@@ -8,6 +8,7 @@ library(tidyverse)
 library(readxl)
 library(here)
 library(ggplot2)
+library(lubridate)
 ```
 
 ```{r load-data, message=FALSE}
@@ -18,7 +19,7 @@ lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Dat
 
 ```{r renaiming columns in lekagul_sensor_data}
 lekagul_sensor_data <- lekagul_sensor_data %>%
-  rename(id = "car-id", type = "car-type")
+  rename(id = "car-id", type = "car-type", gate = "gate-name")
 ```
 
 
@@ -48,9 +49,83 @@ common_vehicle_id <- ggplot(common_id, aes(x = reorder(id, -n), y = n))+
 common_vehicle_id
 ```
 
-```{r}
+```{r closer look at id 20154519024544-322}
 id_20154519024544_322 <- lekagul_sensor_data %>%
   filter(id == "20154519024544-322")
 id_20154519024544_322
 ```
+
+```{r common gate for id 20154519024544-322}
+common_gate_20154519024544_322 <- id_20154519024544_322 %>%
+  count(gate, sort = TRUE) %>%
+  filter(rank(desc(n)) > 0)
+common_gate_20154519024544_322
+```
+
+```{r cleaning up date and splitting date into multiple columns}
+lekagul_dateparse <- lekagul_sensor_data %>%
+  mutate(date = format(Timestamp, "%m/%d/%y"),
+         time_24 = format(Timestamp, "%H:%M:%S"))
+lekagul_dateparse
+```
+
+```{r finding and visualizing dates with most frequent travel for all ids}
+common_date <- lekagul_dateparse %>%
+  count(date, sort = TRUE) %>%
+  slice(1:25) %>%
+  filter(rank(desc(n)) > 0)
+common_date
+
+common_date_plot <- ggplot(common_date, aes(x = reorder(date, -n), y = n))+
+  geom_bar(stat = "identity") +
+  labs(title = "Dates with Most Frequent Travel for All IDs", x = "Date", y = "Number of Locations Visited") + 
+  theme(axis.text.x = element_text(angle = 270))
+common_date_plot
+```
+
+```{r filtering and visualizing most common date for id 20154519024544-322}
+dateparse_20154519024544_322 <- lekagul_dateparse %>%
+  filter(id == "20154519024544-322") %>%
+  count(date, sort = TRUE) %>%
+  filter(rank(desc(n)) > 0)
+dateparse_20154519024544_322
+
+common_date_20154519024544_322 <- ggplot(dateparse_20154519024544_322, aes(x = reorder(date, -n), y = n))+
+  geom_bar(stat = "identity") +
+  labs(title = "Dates with Most Frequent Travel for ID 20154519024544-322", x = "Date", y = "Number of Locations Visited") + 
+  theme(axis.text.x = element_text(angle = 270))
+common_date_20154519024544_322
+```
+
+```{r analyzing travel patterns for id 20154519024544-322}
+# making day column and converting it to integer value
+day_20154519024544_322 <- lekagul_dateparse %>%
+  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = as.integer(day)) %>%
+  filter(id == "20154519024544-322") 
+day_20154519024544_322
+
+#subtracting consecutive dates to see number of days between each movement
+diff_day_20154519024544_322 <- day_20154519024544_322 %>%
+    mutate(day_diff = day - lag(day))
+diff_day_20154519024544_322
+
+
+diff_day_20154519024544_322$day_diff[30] = 4
+diff_day_20154519024544_322$day_diff[111] = 4
+diff_day_20154519024544_322$day_diff[192] = 5
+diff_day_20154519024544_322$day_diff[264] = 4
+diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
+diff_day_20154519024544_322
+
+diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, y = day_diff))+
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Days Between Movement for ID 20154519024544-322", 
+       x = "Date", 
+       y = "Number of Days Between Movement",
+       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
+  theme(axis.text.x = element_text(angle = 270)) 
+diffday_20154519024544_322
+```
+
 
