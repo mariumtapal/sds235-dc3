@@ -13,6 +13,7 @@ a. Some activities may deviate from an established pattern, or are just difficul
 b. What are the top 3 patterns you discovered that you suspect could be most impactful to bird life in the preserve?
 c. Turning your attention to the sensor data, characterize the sensors’ performance and operation. - Are they all working properly?
 d. Can you detect any unexpected behaviors of the sensors through analyzing the readings they capture?
+**existing ideas on tableau and python
 
 
 ```{r setup, include=FALSE}
