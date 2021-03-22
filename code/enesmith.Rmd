@@ -31,6 +31,8 @@ lekagul_sensor_data <- lekagul_sensor_data %>%
   mutate(car_type = as.factor(car_type))
 ```
 
+In trying to figure out patterns of activity in the traffic data, I thought it would first be helpful to have an idea of where on the map the factories and chemical sensors are located. I created a dataframe of their coordinates from the data description and plotted them over the map of roadways.
+
 ```{r}
 #trying to plot sensors and factories on map
 
@@ -74,4 +76,139 @@ fig1 <- fig1 %>% layout(
     yaxis = list(range = c(0, 200)))
 fig1
 ```
+
+Next, I want to get an idea of the typical movement of vehicles throughout the day, but there is no location data for the different gates/entrances the vehicles are recorded going through. This isn't a perfect method, but I decided to use the plotly map I made to guesstimate the coordinates of the different gates so that I could then plot the movements of vehicles.
+```{r}
+lekagul_sensor_data %>% 
+  group_by(gate_name) %>% 
+  summarize()
+
+#by zooming in to plotly graph, figure out coordinates of gates/entrances/etc and make them into a dataframe
+
+gate_name <- c("ranger-stop1", "gate2", "entrance1", "ranger-stop4", "camping5", "camping4", "camping2", "camping3", "camping0", "entrance0", "general-gate1", "gate0", "gate1", "general-gate7", "gate7", "general-gate4", "ranger-stop2", "ranger-stop0", "general-gate0", "general-gate2", "camping1", "general-gate5", "general-gate6", "ranger-stop6", "gate6", "entrance3", "entrance4", "gate8", "camping6", "ranger-base", "gate5", "gate3", "ranger-stop3", "camping8", "general-gate3", "entrance2", "gate4", "ranger-stop5", "camping7", "ranger-stop7")
+
+X <- c(20, 25, 18, 19, 21, 49, 45, 46, 53, 63, 65, 64, 59, 66, 97, 70, 81, 90, 110, 104, 129, 124, 136, 123, 116, 115, 140, 138, 150, 128, 131, 149, 148, 183, 186, 183, 164, 151, 181, 100)
+
+Y <- c(175, 145, 132, 104, 79, 110, 135, 131, 158, 186, 174, 166, 155, 56, 40, 102, 164, 183, 190, 167, 149, 89, 63, 53, 49, 33, 16, 19, 23, 25, 54, 139, 154, 151, 144, 113, 86, 82, 55, 48)
+
+gates <- data.frame(gate_name, X, Y)
+```
+
+```{r}
+#join gates dataframe with lekagul_sensor data frame by the name of gate
+lekagul_traffic <- inner_join(lekagul_sensor_data, gates, by = "gate_name")
+```
+
+Because 20154519024544-322 is the car-id with the most movement by far, I wanted to look at the movement of this vehicle on the map. It is vehicle type 2. 
+```{r}
+#look at id 20154519024544-322 from Lauren's work, which had most movements
+lekagul_traffic %>% 
+  filter(car_id == "20154519024544-322")
+```
+This is a static plot of all of this vehicle's movement, but it's not super helpful because it just shows that the vehicle went to every gate at some point.
+
+```{r}
+fig2 <- lekagul_traffic %>%
+  filter(car_id == "20154519024544-322") %>% 
+  plot_ly(x = X,
+    y = Y,
+    type = 'scatter',
+    mode = 'markers') %>%
+    layout(
+      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+           xref = "x",
+           yref = "y",
+           x = 0,
+           y = 200,
+           sizex = 200,
+           sizey = 200,
+           sizing = "stretch",
+           opacity = 1,
+           layer = "below")) 
+
+fig2 <- fig2 %>% layout(
+    xaxis = list(range = c(0, 200)),
+    yaxis = list(range = c(0, 200)))
+fig2
+```
+
+So I wanted to look at a bar plot of the frequencies this id went to the different gates, to see if there were any that stood out. 
+
+```{r}
+#bar plot of 20154519024544-322 destinations
+lekagul_traffic %>% 
+  filter(car_id == "20154519024544-322") %>%
+  ggplot(mapping = aes(x = gate_name)) +
+  geom_bar() +
+  facet_wrap(~gate_name)+
+  labs(title = "Destinations of car id 20154519024544-322")
+```
+
+This vehicle went to entrance 1 only once, and then everywhere else they went 31 times, except for camping 4, which they went to 32 times. 
+
+```{r}
+#generate random number from 1 to 171477 to pick a row to visualize the movement of that particular id on that particular day
+
+set.seed(35)
+rand_id <- sample(1:171477, 1)
+rand_id
+
+lekagul_traffic %>% 
+  slice(66246:66246)
+```
+
+To get a sense of typical movement a day, I randomly generated a row from the lekagul traffic data set. Row 66246 is car_id 20150124040140-271, vehicle type 3, the day is 7/24, so I'm going to filter for that id and that day to plot the movement. 
+
+```{r}
+
+```
+
+
+```{r}
+fig3 <- lekagul_traffic %>% 
+  filter(car_id == "20150124040140-271") %>% 
+  plot_ly(x = ~X,
+    y = ~Y,
+    frame = ~timestamp,
+    type = 'scatter',
+    mode = 'markers') %>%
+    layout(
+      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+           xref = "x",
+           yref = "y",
+           x = 0,
+           y = 200,
+           sizex = 200,
+           sizey = 200,
+           sizing = "stretch",
+           opacity = 1,
+           layer = "below")) 
+fig3 <- fig3 %>% layout(
+    xaxis = list(range = c(0, 200)),
+    yaxis = list(range = c(0, 200)))
+fig3
+```
+
+This plot is having issues with the timestamp and I can't figure out how to get it to change. So I'm changing tactics to look at a bargraph of this vehicle's movements. 
+
+```{r}
+lekagul_traffic %>% 
+  filter(car_id == "20150124040140-271")
+```
+
+This vehicle only travels for a single day, they enter entrance 3 at 16:01 and exit entrance 4 at 17:39, and they pass by camping 3 and general-gate7 twice each. 
+
+```{r}
+lekagul_traffic %>% 
+  filter(car_id == "20150124040140-271") %>%
+  ggplot(mapping = aes(x = gate_name, fill = timestamp)) +
+  geom_bar() +
+  facet_wrap(~gate_name)+
+  labs(title = "Destinations of car id 20150124040140-271")
+```
+
+things to do next: break up timestamp, group by day, try to animate over time
+maybe try to join sensor and traffic data sets?
+
+
 

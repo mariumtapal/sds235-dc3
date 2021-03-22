@@ -13,6 +13,7 @@ a. Some activities may deviate from an established pattern, or are just difficul
 b. What are the top 3 patterns you discovered that you suspect could be most impactful to bird life in the preserve?
 c. Turning your attention to the sensor data, characterize the sensors’ performance and operation. - Are they all working properly?
 d. Can you detect any unexpected behaviors of the sensors through analyzing the readings they capture?
+**existing ideas on tableau and python
 
 
 ```{r setup, include=FALSE}
@@ -41,6 +42,56 @@ lekagul_sensor_data <- lekagul_sensor_data %>%
   clean_names() %>%
   mutate(car_type = as.factor(car_type))
 ```
+
+//from enesmith for help
+
+```{r}
+#trying to plot sensors and factories on map
+
+#creating dataframe of factories and sensors and their coordinates (info from sensor data descriptions doc)
+
+name <- c("Roadrunner", "Kasios", "Radiance", "Indigo", "Sensor 1", "Sensor 2", "Sensor 3", "Sensor 4", "Sensor 5", "Sensor 6", "Sensor 7", "Sensor 8", "Sensor 9")
+
+x_location <- c(89, 90, 109, 120, 62, 66, 76, 88, 103, 102, 89, 74, 119)
+
+y_location <- c(27, 21, 26, 22, 21, 35, 41, 45, 43, 22, 3, 7, 42)
+
+type <- c("factory", "factory","factory","factory", "sensor", "sensor", "sensor", "sensor", "sensor", "sensor", "sensor", "sensor", "sensor")
+
+locations <- data.frame(name, x_location, y_location, type)
+```
+
+
+//from enesmith for help
+```{r}
+#plotting locations of sensors and factories from location data frame on map, using code from my rmd in DC2
+
+fig1 <- locations %>% 
+  plot_ly(x = ~x_location,
+    y = ~y_location,
+    type = 'scatter',
+    mode = 'markers',
+    color = ~type,
+    text = ~name) %>%
+    layout(
+      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Traffic%20Data/Lekagul%20Roadways%20labeled%20v2.jpg",
+           xref = "x",
+           yref = "y",
+           x = 0,
+           y = 200,
+           sizex = 200,
+           sizey = 200,
+           sizing = "stretch",
+           opacity = 1,
+           layer = "below")) 
+
+fig1 <- fig1 %>% layout(
+    xaxis = list(range = c(0, 200)),
+    yaxis = list(range = c(0, 200)))
+fig1
+```
+```
+
 
 # Acknowledgements
 This dataset was prepared by Pacific Northwest National Laboratory as part of the VAST Challenge 2017.
