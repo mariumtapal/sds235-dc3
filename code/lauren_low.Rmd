@@ -129,7 +129,7 @@ diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, 
 diffday_20154519024544_322
 ```
 
-```{r}
+```{r same analysis but for id 20154112014114-381}
 dateparse_20154112014114_381 <- lekagul_dateparse %>%
   filter(id == "20154112014114-381") %>%
   count(date, sort = TRUE) %>%
