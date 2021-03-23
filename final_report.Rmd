@@ -1,6 +1,6 @@
 ---
 title: '**DC3: Final Report**'
-author: "Marium Tapal, Eleni Partakki, Lauren Low, Elisabeth Nesmith, Joyce Huang"
+author: "Marium Tapal, Eleni Partakki, Lauren Low, Elisabeth Nesmith"
 date: "23 March 2021"
 output: 
   html_document:
@@ -17,5 +17,195 @@ knitr::opts_chunk$set(
 
 ```{r packages, message=FALSE}
 library(tidyverse)
+library(readxl)
+library(janitor)
+library(here)
+library(lubridate)
+library(plotly)
+library(mosaic)
+library(datapasta)
+library(patchwork)
 ```
 
+```{r load-data, message=FALSE}
+# loading in data
+meteorological_data <- read_xlsx(here("data", "Sensor Data", "Meteorological Data.xlsx"))
+sensor_data <- read_xlsx(here("data", "Sensor Data", "Sensor Data.xlsx"))
+lekagul_sensor_data <- read_csv(here("data", "Traffic Data", "Lekagul Sensor Data.csv"))
+```
+
+```{r data-cleaning}
+# basic data cleaning
+meteorological_data <- meteorological_data %>%
+  clean_names() %>%
+  select(-x4)
+sensor_data <- sensor_data %>%
+  clean_names() %>%
+  mutate(monitor = as.factor(monitor))
+lekagul_sensor_data <- lekagul_sensor_data %>%
+  clean_names() %>%
+  mutate(car_type = as.factor(car_type))
+```
+
+For Data Challenge 3 we were asked as experts in visual analytics to help Mitch Vogel analyze these datasets since he has been discovering signs that the number of nesting pairs of the Rose-Crested Blue Pipit is decreasing. Something is suspicious, but what?
+
+```{r, out.width='60%', fig.align='center', fig.cap='Rose-breasted Grosbeak by Tom Snow, Macaulay Library'}
+knitr::include_graphics("https://www.allaboutbirds.org/guide/assets/photo/297326811-1280px.jpg")
+```
+
+# What does the Traffic Data tell us?
+
+## “Patterns of Life” analyses depend on recognizing repeating patterns of activities by individuals or groups. Describe some of the daily patterns of life you observe in the vehicles traveling through and within the park. Characterize the patterns by describing:
+
+### the kinds of vehicles
+### their spatial activities (where do they go?)
+### their temporal activities (when does the pattern happen?)
+### and provide a hypothesis of what the pattern represents (for example, if I drove to a coffee house every morning, but did not stay for long, you might hypothesize I’m getting coffee “to-go”).
+
+## Some patterns may appear over longer periods of time (in this case, over multiple days). Describe a few patterns of life that occur over longer time periods by vehicles traveling through and within the park. You may want to use the same what-where-when breakdown described above to frame your description.
+
+## Some activities may deviate from an established pattern or are just difficult to explain from what you know of a situation. Describe any unusual patterns (either single day or multiple days) and highlight why you find them unusual.
+
+## What are the top 3 patterns you discovered that you suspect could be most impactful to bird life in the preserve?
+
+# What does the Sensor Data tell us?
+
+## Turning your attention to the sensor data, characterize the sensors’ performance and operation. Are they all working properly?
+
+## Can you detect any unexpected behaviors of the sensors by analyzing the readings they capture?
+
+# What about the chemicals did we find?
+
+## Which chemicals are being detected by the sensor group?
+
+```{r}
+p1 <- sensor_data %>%
+  group_by(chemical) %>%
+  ggplot(aes(x = date_time, y = reading, color = chemical)) +
+  geom_line(aes(group = chemical), alpha = 0.4) +
+  labs(title = "Sensor Readings by Chemical Type", x = "Month", y = "Monitor Reading")
+ggplotly(p1)
+```
+
+In the interactive plot above, you can see the readings for each chemical alone by double clicking its name in the legend. Through a first look, the readings of __AGOC-3A__ and __Methylosmolene__ seem very volatile compared to the __Chlorodinine__ and __Appluimonia__. 
+
+We think these are more suspicious than the other two because the ranges of values are way larger as shown by the summary statistics below. While this volatility could be explained by some other factors as the concentration of chemicals (measured in parts per million) can be different for different chemicals, we still think that something is happening. The quartiles, means, and standard deviation are small, but the range is comparatively very large.
+
+```{r}
+# make subsetted datasets for summary stats
+methylosmolene <- sensor_data %>% filter(chemical == "Methylosmolene")
+agoc3a <- sensor_data %>% filter(chemical == "AGOC-3A")
+chlorodinine <- sensor_data %>% filter(chemical == "Chlorodinine")
+appluimonia <- sensor_data %>% filter(chemical == "Appluimonia")
+
+# make dataframe of summary stats
+summary_stats <- rbind(fav_stats(methylosmolene$reading), fav_stats(agoc3a$reading), fav_stats(chlorodinine$reading), fav_stats(appluimonia$reading))
+
+# add chemical name manually
+summary_stats <- summary_stats %>% mutate(chemical = c("Methylosmolene", "AGOC-3A", "Chlorodinine", "Appluimonia"))
+
+# calculate range
+summary_stats <- summary_stats %>% mutate(range = max - min)
+
+# reorder columns
+summary_stats <- summary_stats[, c(10, 11, 1, 2, 3, 4, 5, 6, 7, 8, 9)]
+
+# fix row names
+rownames(summary_stats)<-c("1","2","3","4")
+# print stats
+summary_stats %>%
+  select(-c(n, missing)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_minimal(full_width = FALSE)
+```
+
+Perhaps this extra volatility/concentration explains the dumping of the chemical in river.
+
+## What patterns of chemical releases do you see?
+
+Investigating further into these chemicals, they are most commonly detected on monitor 6, and then monitor on 3.
+
+### Methylosmolene
+
+From the "Sensor Readings by Chemical Type" graph above, it looks like an average reading for Methylosmolene is about 4 parts per million. We filter for the dataset due to limited computational power: am filtering to check for monitors
+``` {r}
+d1 <- sensor_data %>% filter(chemical == "Methylosmolene" & reading >= 4)
+ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) +
+  geom_point() + labs(x = "Month", y = "Monitor Reading", 
+                       title = "Sensor Readings by Monitor for Methylosmolene"))
+```
+
+Most of the higher readings are coming from monitor 6 in April and December!
+
+### AGOC-3A
+
+Similar to Methylosmolene, the average reading also looks like about 4 parts per million.
+
+``` {r}
+d2 <- sensor_data %>% filter(chemical == "AGOC-3A" & reading >= 4)
+ggplotly(ggplot(d2, aes(x = date_time, y = reading, color = monitor)) +
+  geom_point() + labs(x = "Month", y = "Monitor Reading", 
+                       title = "Sensor Readings by Monitor for AGOC-3A"))
+```
+
+Again, a lot of the higher readings are at monitor 6, especially in April!
+
+## Which factories are responsible for which chemical releases?
+
+Through an investigation of the financial data of these factories reported in the semi-annual newsletters, we are suspicious that the Kasios Office Furniture and Radiance ColourTek are involved in some way. 
+
+```{r}
+# create data frame with {datapasta} addin
+finance <- data.frame(
+  stringsAsFactors = FALSE,
+  Year = c(
+    "2012-12-01",
+    "2013-03-01", "2013-06-01", "2013-10-01", "2013-12-01",
+    "2014-03-01", "2014-06-01", "2014-10-01", "2014-12-01",
+    "2015-03-01", "2015-06-01", "2015-10-01", "2015-12-01",
+    "2016-03-01", "2016-06-01", "2016-10-01"
+  ),
+  Indigo = c(
+    4.32, 3.56, 2.95, 3.28,
+    4.5, 4.16, 3.26, 3.87, 4.91, 3.83, 3.65, 4.24, 5.21,
+    4.74, 4.21, 4.57
+  ),
+  Kasios = c(
+    6.24, 6.37, 6.17, 5.49,
+    5.23, 4.92, 4.18, 3.25, 2.65, 2.94, 3.48, 4.9, 5.61,
+    6.84, 7.23, 7.85
+  ),
+  Radiance = c(
+    7.18, 7.32, 7.09, 7.21,
+    7.37, 7.63, 7.29, 8.02, 7.53, 4.18, 4.36, 4.22, 4.89,
+    4.71, 5.03, 5.13
+  ),
+  Roadrunner = c(
+    5.53, 5.81, 6.34, 6.73,
+    7.14, 6.92, 6.84, 6.95, 6.69, 6.74, 6.53, 6.71, 6.82,
+    6.59, 6.71, 6.68
+  )
+)
+finance$Year <- parse_date_time(finance$Year, "Ymd")
+
+# plot
+Indigo <- ggplot(finance, aes(x = Year, y = Indigo)) +
+  geom_line()
+Kasios <- ggplot(finance, aes(x = Year, y = Kasios)) +
+  geom_line()
+Radiance <- ggplot(finance, aes(x = Year, y = Radiance)) +
+  geom_line()
+Roadrunner <- ggplot(finance, aes(x = Year, y = Roadrunner)) +
+  geom_line()
+Indigo + Kasios + Radiance + Roadrunner + plot_annotation(title = "Quaterly Earnings per Share ($) by Company")
+```
+
+Looking at the plot above, we see around late 2014 and early 2015, there was a steep decline in the earnings per share of both the above mentioned companies. Kasios quickly recovers, but Radiance does not. 
+
+We are suspicious that Kasios is the “bad player” and Radiance is being “framed” because Kasios’ quick fall and recovery looks too good to be true and the timing coincides with the fall of the Radiance company. 
+
+We are not suspicious of the Roadrunner Fitness Electronics and Indigo Sol Boards factories because there is either a stable increase or decrease in earnings per share around the time frame we are looking at (2014-2016).
+
+The sensors 3 and 6 are also quite close in proximity to the Kasios and Radiance factories.
+
+## For the factories you identified, describe any observed patterns of operation revealed in the data.
