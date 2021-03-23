@@ -288,7 +288,8 @@ fig7 <- lekagul_traffic %>%
     y = ~Y,
     frame = ~datetime,
     type = 'scatter',
-    mode = 'markers') %>%
+    mode = 'markers',
+    color = ~car_id) %>%
     layout(
       title = "Movements of ID 20153408043401-757",
       images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
@@ -319,7 +320,8 @@ fig8 <- lekagul_traffic %>%
     y = ~Y,
     frame = ~datetime,
     type = 'scatter',
-    mode = 'markers') %>%
+    mode = 'markers',
+    color = ~car_id) %>%
     layout(
       title = "Movements of ID 20153628063656-228",
       images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
