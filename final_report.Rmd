@@ -58,9 +58,132 @@ knitr::include_graphics("https://www.allaboutbirds.org/guide/assets/photo/297326
 ## “Patterns of Life” analyses depend on recognizing repeating patterns of activities by individuals or groups. Describe some of the daily patterns of life you observe in the vehicles traveling through and within the park. Characterize the patterns by describing:
 
 ### the kinds of vehicles
+The most common type of vehicles that entered the park was single axle vehicles.  Over the recorded months in 2015, over 67,000 1 axle vehicles appeared in the park.  About 40,000 and 27,000 2 and 3 axle vehicles, respectively entered the park.  Nearly 24,000 park service vehicles entered and exited the park.  While fewer than 14,000 4, 5 and 6 axle vehicles were in the park.
+
+```{r}
+common_type <- lekagul_sensor_data %>%
+  group_by(type) %>%
+  count(type)
+common_type
+
+common_vehicle_type <- ggplot(common_type, aes(x = reorder(type, -n), y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Most Common Vehicles Types in Boonsong Lekagul Nature Preserve", x = "Vehicle Type", y = "Number of Vehicles")
+common_vehicle_type
+```
+
+Vehicle IDs 20154519024544-322, 20154112014114-381 and 20155705025759-63 were frequent travelers in the park.  Sensors across all locations of the park detected vehicle 20154519024544-322 exactly 281 times, vehicle 20154112014114-381 nearly 100 times and vehicle 20155705025759-63 exactly 70 times, while all other vehicles were detected 49 times or less.
+
+```{r}
+common_id <- lekagul_sensor_data %>%
+  count(id, sort = TRUE) %>%
+  slice(1:10) %>%
+  filter(rank(desc(n)) > 0)
+common_id
+
+common_vehicle_id <- ggplot(common_id, aes(x = reorder(id, -n), y = n))+
+  geom_bar(stat = "identity") +
+  labs(title = "Top Ten Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") + 
+  theme(axis.text.x = element_text(angle = 270))
+common_vehicle_id
+```
+
 ### their spatial activities (where do they go?)
+Since vehicle ID 20154519024544-322 had the highest amount of travel, we chose to take a closer look at it. 
+
+The most common destination for all vehicle ID 20154519024544-322 was camping4 with 32 visits.  Entrance4, general-gate1, general-gate2, general-gate4, general-gate5, general-gate7, ranger-stop0 and ranger-stop2 all saw 31 visits from this particular vehicle.  Entrance1 only saw one visit from vehicle ID 20154519024544-322.
+
+```{r}
+common_gate_20154519024544_322 <- id_20154519024544_322 %>%
+  count(gate, sort = TRUE) %>%
+  filter(rank(desc(n)) > 0)
+common_gate_20154519024544_322
+```
+
 ### their temporal activities (when does the pattern happen?)
+
+In analyzing vehicle ID 20154519024544-322’s travel patterns, we realized that their movement is very regular.  It seems to be the case that the number of days between travel is somewhat constant.
+
+```{r}
+# making day column and converting it to integer value
+day_20154519024544_322 <- lekagul_dateparse %>%
+  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = as.integer(day)) %>%
+  filter(id == "20154519024544-322") 
+day_20154519024544_322
+
+# subtracting consecutive dates to see number of days between each movement
+diff_day_20154519024544_322 <- day_20154519024544_322 %>%
+    mutate(day_diff = day - lag(day))
+diff_day_20154519024544_322
+
+# accounting for changes in month
+diff_day_20154519024544_322$day_diff[30] = 4
+diff_day_20154519024544_322$day_diff[111] = 4
+diff_day_20154519024544_322$day_diff[192] = 5
+diff_day_20154519024544_322$day_diff[264] = 4
+diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
+diff_day_20154519024544_322
+
+# visualizing
+diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, y = day_diff))+
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Days Between Movement for ID 20154519024544-322", 
+       x = "Date", 
+       y = "Number of Days Between Movement",
+       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
+  theme(axis.text.x = element_text(angle = 270)) 
+diffday_20154519024544_322
+```
+
+When vehicle ID 20154519024544-322 travels in the park, they usually take the same route to camping4, stay there for two days, leave the way they entered, then repeat the pattern every four days or so.  
+
 ### and provide a hypothesis of what the pattern represents (for example, if I drove to a coffee house every morning, but did not stay for long, you might hypothesize I’m getting coffee “to-go”).
+
+We guess that vehicle ID 20154519024544-322 is making a delivery of some sort or perhaps picking something up.  Patterns and hypotheses for vehicle ID 20154112014114-381 (the vehicle with the second highest sensor detection throughout the park) are similar to that of vehicle ID 20154519024544-322.
+
+```{r}
+dateparse_20154112014114_381 <- lekagul_dateparse %>%
+  filter(id == "20154112014114-381") %>%
+  count(date, sort = TRUE) %>%
+  filter(rank(desc(n)) > 0)
+dateparse_20154112014114_381
+
+common_date_20154112014114_381 <- ggplot(dateparse_20154112014114_381, aes(x = reorder(date, -n), y = n))+
+  geom_bar(stat = "identity") +
+  labs(title = "Dates with Most Frequent Travel for ID 20154112014114-381", x = "Date", y = "Number of Locations Visited") + 
+  theme(axis.text.x = element_text(angle = 270))
+common_date_20154112014114_381
+
+# making day column and converting it to integer value
+day_20154112014114_381 <- lekagul_dateparse %>%
+  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = as.integer(day)) %>%
+  filter(id == "20154112014114-381") 
+day_20154112014114_381
+
+# subtracting consecutive dates to see number of days between each movement
+diff_day_20154112014114_381 <- day_20154112014114_381 %>%
+    mutate(day_diff = day - lag(day))
+diff_day_20154112014114_381
+
+# accounting for changes in month
+diff_day_20154112014114_381$day_diff[43] = 5
+diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
+
+diff_day_20154112014114_381
+
+# visualizing
+diff_day_20154112014114_381 <- ggplot(diff_day_20154112014114_381, aes(x = date, y = day_diff))+
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Days Between Movement for ID 20154112014114-381", 
+       x = "Date", 
+       y = "Number of Days Between Movement",
+       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
+  theme(axis.text.x = element_text(angle = 270)) 
+diff_day_20154112014114_381
+```
+
 
 ## Some patterns may appear over longer periods of time (in this case, over multiple days). Describe a few patterns of life that occur over longer time periods by vehicles traveling through and within the park. You may want to use the same what-where-when breakdown described above to frame your description.
 
