@@ -84,15 +84,12 @@ knitr::include_graphics("https://www.allaboutbirds.org/guide/assets/photo/297326
 The most common type of vehicles that entered the park was single axle vehicles.  Over the recorded months in 2015, over 67,000 1 axle vehicles appeared in the park.  About 40,000 and 27,000 2 and 3 axle vehicles, respectively entered the park.  Nearly 24,000 park service vehicles entered and exited the park.  While fewer than 14,000 4, 5 and 6 axle vehicles were in the park.
 
 ```{r}
-lekagul_sensor_data <- lekagul_sensor_data %>%
-  rename(id = "car-id", type = "car-type", gate = "gate-name")
-
 common_type <- lekagul_sensor_data %>%
-  group_by(type) %>%
-  count(type)
+  group_by(car_type) %>%
+  count(car_type)
 common_type
 
-common_vehicle_type <- ggplot(common_type, aes(x = reorder(type, -n), y = n)) +
+common_vehicle_type <- ggplot(common_type, aes(x = reorder(car_type, -n), y = n)) +
   geom_bar(stat = "identity") +
   labs(title = "Most Common Vehicles Types in Boonsong Lekagul Nature Preserve", x = "Vehicle Type", y = "Number of Vehicles")
 common_vehicle_type
@@ -102,12 +99,12 @@ Vehicle IDs 20154519024544-322, 20154112014114-381 and 20155705025759-63 were fr
 
 ```{r}
 common_id <- lekagul_sensor_data %>%
-  count(id, sort = TRUE) %>%
+  count(car_id, sort = TRUE) %>%
   slice(1:10) %>%
   filter(rank(desc(n)) > 0)
 common_id
 
-common_vehicle_id <- ggplot(common_id, aes(x = reorder(id, -n), y = n))+
+common_vehicle_id <- ggplot(common_id, aes(x = reorder(car_id, -n), y = n))+
   geom_bar(stat = "identity") +
   labs(title = "Top Ten Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") + 
   theme(axis.text.x = element_text(angle = 270))
@@ -121,11 +118,11 @@ The most common destination for all vehicle ID 20154519024544-322 was camping4 w
 
 ```{r}
 id_20154519024544_322 <- lekagul_sensor_data %>%
-  filter(id == "20154519024544-322")
+  filter(car_id == "20154519024544-322")
 id_20154519024544_322
 
 common_gate_20154519024544_322 <- id_20154519024544_322 %>%
-  count(gate, sort = TRUE) %>%
+  count(gate_name, sort = TRUE) %>%
   filter(rank(desc(n)) > 0)
 common_gate_20154519024544_322
 ```
@@ -136,15 +133,15 @@ In analyzing vehicle ID 20154519024544-322’s travel patterns, we realized that
 
 ```{r}
 lekagul_dateparse <- lekagul_sensor_data %>%
-  mutate(date = format(Timestamp, "%m/%d/%y"),
-         time_24 = format(Timestamp, "%H:%M:%S"))
+  mutate(date = format(timestamp, "%m/%d/%y"),
+         time_24 = format(timestamp, "%H:%M:%S"))
 lekagul_dateparse
 
 # making day column and converting it to integer value
 day_20154519024544_322 <- lekagul_dateparse %>%
-  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = format(timestamp, "%d")) %>%
   mutate(day = as.integer(day)) %>%
-  filter(id == "20154519024544-322") 
+  filter(car_id == "20154519024544-322") 
 day_20154519024544_322
 
 # subtracting consecutive dates to see number of days between each movement
@@ -179,7 +176,7 @@ We guess that vehicle ID 20154519024544-322 is making a delivery of some sort or
 
 ```{r}
 dateparse_20154112014114_381 <- lekagul_dateparse %>%
-  filter(id == "20154112014114-381") %>%
+  filter(car_id == "20154112014114-381") %>%
   count(date, sort = TRUE) %>%
   filter(rank(desc(n)) > 0)
 dateparse_20154112014114_381
@@ -192,9 +189,9 @@ common_date_20154112014114_381
 
 # making day column and converting it to integer value
 day_20154112014114_381 <- lekagul_dateparse %>%
-  mutate(day = format(Timestamp, "%d")) %>%
+  mutate(day = format(timestamp, "%d")) %>%
   mutate(day = as.integer(day)) %>%
-  filter(id == "20154112014114-381") 
+  filter(car_id == "20154112014114-381") 
 day_20154112014114_381
 
 # subtracting consecutive dates to see number of days between each movement
