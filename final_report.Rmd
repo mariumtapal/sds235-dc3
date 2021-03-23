@@ -6,6 +6,7 @@ output:
   html_document:
     code_folding: hide
     theme: sandstone
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
@@ -48,7 +49,7 @@ lekagul_sensor_data <- lekagul_sensor_data %>%
 ```
 
 ```{r}
-#creating traffic data with coordinates
+# creating traffic data with coordinates
 
 gate_name <- c("ranger-stop1", "gate2", "entrance1", "ranger-stop4", "camping5", "camping4", "camping2", "camping3", "camping0", "entrance0", "general-gate1", "gate0", "gate1", "general-gate7", "gate7", "general-gate4", "ranger-stop2", "ranger-stop0", "general-gate0", "general-gate2", "camping1", "general-gate5", "general-gate6", "ranger-stop6", "gate6", "entrance3", "entrance4", "gate8", "camping6", "ranger-base", "gate5", "gate3", "ranger-stop3", "camping8", "general-gate3", "entrance2", "gate4", "ranger-stop5", "camping7", "ranger-stop7")
 
@@ -58,15 +59,17 @@ Y <- c(175, 145, 132, 104, 79, 110, 135, 131, 158, 186, 174, 166, 155, 56, 40, 1
 
 gates <- data.frame(gate_name, X, Y)
 
-#join gates dataframe with lekagul_sensor data frame by the name of gate
+# join gates dataframe with lekagul_sensor data frame by the name of gate
 lekagul_traffic <- inner_join(lekagul_sensor_data, gates, by = "gate_name")
 
-#splitting timestamps into date and time variables
+# splitting timestamps into date and time variables
 library(lubridate)
-lekagul_traffic <- lekagul_traffic %>% 
-  mutate(date = as_date(timestamp), 
-         time_12 = format(timestamp, "%I:%M %p"),
-         datetime = as.character(timestamp))
+lekagul_traffic <- lekagul_traffic %>%
+  mutate(
+    date = as_date(timestamp),
+    time_12 = format(timestamp, "%I:%M %p"),
+    datetime = as.character(timestamp)
+  )
 ```
 
 
@@ -78,16 +81,14 @@ knitr::include_graphics("https://www.allaboutbirds.org/guide/assets/photo/297326
 
 # What does the Traffic Data tell us?
 
-## “Patterns of Life” analyses depend on recognizing repeating patterns of activities by individuals or groups. Describe some of the daily patterns of life you observe in the vehicles traveling through and within the park. Characterize the patterns by describing:
+### The kinds of vehicles
 
-### the kinds of vehicles
 The most common type of vehicles that entered the park was single axle vehicles.  Over the recorded months in 2015, over 67,000 1 axle vehicles appeared in the park.  About 40,000 and 27,000 2 and 3 axle vehicles, respectively entered the park.  Nearly 24,000 park service vehicles entered and exited the park.  While fewer than 14,000 4, 5 and 6 axle vehicles were in the park.
 
-```{r}
+```{r, out.width='50%'}
 common_type <- lekagul_sensor_data %>%
   group_by(car_type) %>%
   count(car_type)
-common_type
 
 common_vehicle_type <- ggplot(common_type, aes(x = reorder(car_type, -n), y = n)) +
   geom_bar(stat = "identity") +
@@ -97,93 +98,87 @@ common_vehicle_type
 
 Vehicle IDs 20154519024544-322, 20154112014114-381 and 20155705025759-63 were frequent travelers in the park.  Sensors across all locations of the park detected vehicle 20154519024544-322 exactly 281 times, vehicle 20154112014114-381 nearly 100 times and vehicle 20155705025759-63 exactly 70 times, while all other vehicles were detected 49 times or less.
 
-```{r}
+```{r, out.width='60%'}
 common_id <- lekagul_sensor_data %>%
   count(car_id, sort = TRUE) %>%
   slice(1:10) %>%
   filter(rank(desc(n)) > 0)
-common_id
 
-common_vehicle_id <- ggplot(common_id, aes(x = reorder(car_id, -n), y = n))+
+common_vehicle_id <- ggplot(common_id, aes(x = reorder(car_id, -n), y = n)) +
   geom_bar(stat = "identity") +
-  labs(title = "Top Ten Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") + 
+  labs(title = "Top Ten Vehicles IDs in Boonsong Lekagul Nature Preserve", x = "Vehicle ID", y = "Number of Vehicles") +
   theme(axis.text.x = element_text(angle = 270))
 common_vehicle_id
 ```
 
-### their spatial activities (where do they go?)
+### Their spatial activities (where do they go?)
+
 Since vehicle ID 20154519024544-322 had the highest amount of travel, we chose to take a closer look at it. 
 
 The most common destination for all vehicle ID 20154519024544-322 was camping4 with 32 visits.  Entrance4, general-gate1, general-gate2, general-gate4, general-gate5, general-gate7, ranger-stop0 and ranger-stop2 all saw 31 visits from this particular vehicle.  Entrance1 only saw one visit from vehicle ID 20154519024544-322.
 
-```{r}
+```{r, out.width='60%'}
 id_20154519024544_322 <- lekagul_sensor_data %>%
   filter(car_id == "20154519024544-322")
-id_20154519024544_322
 
 common_gate_20154519024544_322 <- id_20154519024544_322 %>%
   count(gate_name, sort = TRUE) %>%
   filter(rank(desc(n)) > 0)
-common_gate_20154519024544_322
 ```
 
-### their temporal activities (when does the pattern happen?)
+### Their temporal activities (when does the pattern happen?)
 
 In analyzing vehicle ID 20154519024544-322’s travel patterns, we realized that their movement is very regular.  It seems to be the case that the number of days between travel is somewhat constant.
 
-```{r}
+```{r, out.width='60%'}
 lekagul_dateparse <- lekagul_sensor_data %>%
-  mutate(date = format(timestamp, "%m/%d/%y"),
-         time_24 = format(timestamp, "%H:%M:%S"))
-lekagul_dateparse
-
+  mutate(
+    date = format(timestamp, "%m/%d/%y"),
+    time_24 = format(timestamp, "%H:%M:%S")
+  )
 # making day column and converting it to integer value
 day_20154519024544_322 <- lekagul_dateparse %>%
   mutate(day = format(timestamp, "%d")) %>%
   mutate(day = as.integer(day)) %>%
-  filter(car_id == "20154519024544-322") 
-day_20154519024544_322
+  filter(car_id == "20154519024544-322")
 
 # subtracting consecutive dates to see number of days between each movement
 diff_day_20154519024544_322 <- day_20154519024544_322 %>%
-    mutate(day_diff = day - lag(day))
-diff_day_20154519024544_322
+  mutate(day_diff = day - lag(day))
 
 # accounting for changes in month
-diff_day_20154519024544_322$day_diff[30] = 4
-diff_day_20154519024544_322$day_diff[111] = 4
-diff_day_20154519024544_322$day_diff[192] = 5
-diff_day_20154519024544_322$day_diff[264] = 4
+diff_day_20154519024544_322$day_diff[30] <- 4
+diff_day_20154519024544_322$day_diff[111] <- 4
+diff_day_20154519024544_322$day_diff[192] <- 5
+diff_day_20154519024544_322$day_diff[264] <- 4
 diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
-diff_day_20154519024544_322
 
 # visualizing
-diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, y = day_diff))+
+diffday_20154519024544_322 <- ggplot(diff_day_20154519024544_322, aes(x = date, y = day_diff)) +
   geom_bar(stat = "identity") +
-  labs(title = "Number of Days Between Movement for ID 20154519024544-322", 
-       x = "Date", 
-       y = "Number of Days Between Movement",
-       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
-  theme(axis.text.x = element_text(angle = 270)) 
+  labs(
+    title = "Number of Days Between Movement for ID 20154519024544-322",
+    x = "Date",
+    y = "Number of Days Between Movement",
+    caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day"
+  ) +
+  theme(axis.text.x = element_text(angle = 270))
 diffday_20154519024544_322
 ```
 
 When vehicle ID 20154519024544-322 travels in the park, they usually take the same route to camping4, stay there for two days, leave the way they entered, then repeat the pattern every four days or so.  
 
-### and provide a hypothesis of what the pattern represents (for example, if I drove to a coffee house every morning, but did not stay for long, you might hypothesize I’m getting coffee “to-go”).
-
 We guess that vehicle ID 20154519024544-322 is making a delivery of some sort or perhaps picking something up.  Patterns and hypotheses for vehicle ID 20154112014114-381 (the vehicle with the second highest sensor detection throughout the park) are similar to that of vehicle ID 20154519024544-322.
 
-```{r}
+```{r, out.width='50%'}
 dateparse_20154112014114_381 <- lekagul_dateparse %>%
   filter(car_id == "20154112014114-381") %>%
   count(date, sort = TRUE) %>%
   filter(rank(desc(n)) > 0)
-dateparse_20154112014114_381
 
-common_date_20154112014114_381 <- ggplot(dateparse_20154112014114_381, aes(x = reorder(date, -n), y = n))+
+common_date_20154112014114_381 <- ggplot(dateparse_20154112014114_381, aes(x = reorder(date, -n), y = n)) +
   geom_bar(stat = "identity") +
-  labs(title = "Dates with Most Frequent Travel for ID 20154112014114-381", x = "Date", y = "Number of Locations Visited") + 
+  labs(title = "Dates with Most Frequent Travel for ID 20154112014114-381", x = "Date", y = "Number of Locations Visited") +
   theme(axis.text.x = element_text(angle = 270))
 common_date_20154112014114_381
 
@@ -191,33 +186,31 @@ common_date_20154112014114_381
 day_20154112014114_381 <- lekagul_dateparse %>%
   mutate(day = format(timestamp, "%d")) %>%
   mutate(day = as.integer(day)) %>%
-  filter(car_id == "20154112014114-381") 
-day_20154112014114_381
+  filter(car_id == "20154112014114-381")
 
 # subtracting consecutive dates to see number of days between each movement
 diff_day_20154112014114_381 <- day_20154112014114_381 %>%
-    mutate(day_diff = day - lag(day))
-diff_day_20154112014114_381
+  mutate(day_diff = day - lag(day))
 
 # accounting for changes in month
-diff_day_20154112014114_381$day_diff[43] = 5
+diff_day_20154112014114_381$day_diff[43] <- 5
 diff_day_20154519024544_322[diff_day_20154519024544_322 == 0] <- 0.07
 
-diff_day_20154112014114_381
-
 # visualizing
-diff_day_20154112014114_381 <- ggplot(diff_day_20154112014114_381, aes(x = date, y = day_diff))+
+diff_day_20154112014114_381 <- ggplot(diff_day_20154112014114_381, aes(x = date, y = day_diff)) +
   geom_bar(stat = "identity") +
-  labs(title = "Number of Days Between Movement for ID 20154112014114-381", 
-       x = "Date", 
-       y = "Number of Days Between Movement",
-       caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day") + 
-  theme(axis.text.x = element_text(angle = 270)) 
+  labs(
+    title = "Number of Days Between Movement for ID 20154112014114-381",
+    x = "Date",
+    y = "Number of Days Between Movement",
+    caption = "*Note: dates in which there are stacks or ridges on the bar indicate that vehicle ID 20154519024544-322 \n triggered sensors in multiple locations during that day"
+  ) +
+  theme(axis.text.x = element_text(angle = 270))
 diff_day_20154112014114_381
 ```
 
 
-## Some patterns may appear over longer periods of time (in this case, over multiple days). Describe a few patterns of life that occur over longer time periods by vehicles traveling through and within the park. You may want to use the same what-where-when breakdown described above to frame your description.
+## Describe a few patterns of life that occur over longer time periods by vehicles traveling through and within the park
 
 In an attempt to break down the patterns of different vehicles, we decided to look at each vehicle type and the typical number of movements for that type. If there were any car ids that stuck out as having significantly more movements that the other types of similar vehicles, we looked into their movements more closely. Overall, type 1 and 2 vehicles had the most IDs with unusual numbers of movements. 
 
@@ -226,11 +219,11 @@ In an attempt to break down the patterns of different vehicles, we decided to lo
 Filtering the traffic data to only include type 1 vehicles produces the following output:
 
 ```{r}
-#filtering by type 1 cars
-lekagul_traffic %>% 
-  filter(car_type == "1") %>% 
-  group_by(car_id) %>% 
-  count(car_id, sort = TRUE) 
+# filtering by type 1 cars
+lekagul_traffic %>%
+  filter(car_type == "1") %>%
+  group_by(car_id) %>%
+  count(car_id, sort = TRUE)
 ```
 
 As we can see, the typical range for type 1 vehicles is about 14 to about 25 movements. ID's 20154112014114-381 and 20155705025759-63 have significantly more movement than other vehicle type 1s with 98 and 70 movements, respectively. Additionally, ID 20162904122951-717 has more than the others with 36 movements.
@@ -240,32 +233,38 @@ As we can see, the typical range for type 1 vehicles is about 14 to about 25 mov
 Upon further examination, this vehicle enters at entrance 0, goes to general-gate 1, ranger-stop 2, ranger-stop 0, general-gate 2, general-gate 5, then camping 6. Two days later around 10:30 PM, it leaves camping 6, going back the exact way it came in. It repeats this exact same shift every week. This movement is thus very regular, pointing to perhaps a maintanence worker or park ranger of some sort. See animation below.
 
 ```{r}
-#make graph to show the pattern above
-fig4 <- lekagul_traffic %>% 
-  filter(car_id == "20154112014114-381") %>% 
-  plot_ly(x = ~X,
+# make graph to show the pattern above
+fig4 <- lekagul_traffic %>%
+  filter(car_id == "20154112014114-381") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
+    type = "scatter",
+    mode = "markers",
     color = ~car_id,
-    colors = "red") %>%
-    layout(
-      title = "Movements of ID 20154112014114-381",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    colors = "red"
+  ) %>%
+  layout(
+    title = "Movements of ID 20154112014114-381",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig4 <- fig4 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig4
 ```
 
@@ -274,42 +273,48 @@ fig4
 This id is kind of strange because it enters the park from entrance 0 on 6/05/2015, and then it never leaves. It goes  around to different camping areas, stopping at each one (except for camping 7 and 8) for close to a month, except for camping 1, where it only stays for 15 minutes. The last data point for this vehicle is from 5/20/2016, where it has just entered camping 5. See animation below. 
 
 ```{r}
-fig5 <- lekagul_traffic %>% 
-  filter(car_id == "20155705025759-63") %>% 
-  plot_ly(x = ~X,
+fig5 <- lekagul_traffic %>%
+  filter(car_id == "20155705025759-63") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
+    type = "scatter",
+    mode = "markers",
     color = ~car_id,
-    colors = "yellow") %>%
-    layout(
-      title = "Movements of ID 20155705025759-63",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    colors = "yellow"
+  ) %>%
+  layout(
+    title = "Movements of ID 20155705025759-63",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig5 <- fig5 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig5
 ```
 
 This vehicle often goes down through general gates 4 and 7 before going back up to the campgrounds, putting it in range of the sensors. Maybe this is a case of which roads can be used by which vehicles, but it does seem a little odd. Also, general-gate 7 is the destination this vehicle goes to the most. See figure below.
 
-```{r}
-#bar graph of how many times car id 20155705025759-63 went to each place
-lekagul_traffic %>% 
-  filter(car_id == "20155705025759-63") %>% 
+```{r, out.width='60%'}
+# bar graph of how many times car id 20155705025759-63 went to each place
+lekagul_traffic %>%
+  filter(car_id == "20155705025759-63") %>%
   ggplot(mapping = aes(x = gate_name)) +
-  geom_bar()+
+  geom_bar() +
   theme(axis.text.x = element_text(angle = 270)) +
   labs(title = "Frequency of destinations for ID 20155705025759-63")
 ```
@@ -319,42 +324,48 @@ lekagul_traffic %>%
 This vehicle repeats the same pattern over and over, entering at entrance 3, going through general-gate 7, and then going up to camping 0 where it stays for over two days before going back the same way. It repeats this path weekly. It seems like going through general-gate 7 is definitely not the most direct way to camping 0 from entrance 3, which seems kind of suspicious. Again, general-gate 7 is near several of the sensors, as is entrance 3. See animation below.
 
 ```{r}
-fig5.5 <- lekagul_traffic %>% 
-  filter(car_id == "20162904122951-717") %>% 
-  plot_ly(x = ~X,
+fig5.5 <- lekagul_traffic %>%
+  filter(car_id == "20162904122951-717") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
+    type = "scatter",
+    mode = "markers",
     color = ~car_id,
-    colors = "green") %>%
-    layout(
-      title = "Movements of ID 20162904122951-717",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    colors = "green"
+  ) %>%
+  layout(
+    title = "Movements of ID 20162904122951-717",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig5.5 <- fig5.5 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig5.5
 ```
 
 ### Type 2 Vehicles
 
 Filtering for Type 2 vehicles produces the following output:
-```{r}
-#filtering by type 2 cars
-lekagul_traffic %>% 
-  filter(car_type == "2") %>% 
-  group_by(car_id) %>% 
+```{r, out.width='60%'}
+# filtering by type 2 cars
+lekagul_traffic %>%
+  filter(car_type == "2") %>%
+  group_by(car_id) %>%
   count(car_id, sort = TRUE)
 ```
 
@@ -366,33 +377,39 @@ This vehicle takes the same route every four days or so, entering entrance 4, go
 One thing we also noticed is that after going to general-gate 1, instead of going through gates 0 and 1 to get to camping 4, the vehicle goes down to general-gate 4 and general-gate 7 before coming back up to camping 4. Similar to IDs above, this route feels indirect, and it puts this vehicle in range of the sensors when it is down by general-gate 7. See animation below.  
 
 ```{r}
-#animated plot of all of 20154519024544-322 movements
-#include this graph
-fig6 <- lekagul_traffic %>% 
-  filter(car_id == "20154519024544-322") %>% 
-  plot_ly(x = ~X,
+# animated plot of all of 20154519024544-322 movements
+# include this graph
+fig6 <- lekagul_traffic %>%
+  filter(car_id == "20154519024544-322") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
+    type = "scatter",
+    mode = "markers",
     color = ~car_id,
-    colors = "hot pink") %>% 
-    layout(
-      title = "Movements of ID 20154519024544-322",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    colors = "hot pink"
+  ) %>%
+  layout(
+    title = "Movements of ID 20154519024544-322",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig6 <- fig6 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig6
 ```
 
@@ -400,11 +417,11 @@ fig6
 
 Filtering for type 3 vehicles produced the following output:
 ```{r}
-#filtering by type 3 cars
-lekagul_traffic %>% 
-  filter(car_type == "3") %>% 
-  group_by(car_id) %>% 
-  count(car_id, sort = TRUE) 
+# filtering by type 3 cars
+lekagul_traffic %>%
+  filter(car_type == "3") %>%
+  group_by(car_id) %>%
+  count(car_id, sort = TRUE)
 ```
 
 The two IDs with the most movements, 20153408043401-757 and  20153628063656-228 do not differ from the others by all that much, but we looked into them anyway. The typical range of movements for type 3 vehicles is between 11 and 20. 
@@ -413,31 +430,37 @@ The two IDs with the most movements, 20153408043401-757 and  20153628063656-228 
 This vehicle's movement does not seem overly suspicious, although they do spend about 14 hours at camping 5 before going back almost the way they came. Instead of exiting where they entered, at entrance 3, they exit entrance 4. This is potentially interesting because entrance 3 is right around the factories and sensors. See animation below.
 
 ```{r}
-#plot of movements of id 20153408043401-757
-fig7 <- lekagul_traffic %>% 
-  filter(car_id == "20153408043401-757") %>% 
-  plot_ly(x = ~X,
+# plot of movements of id 20153408043401-757
+fig7 <- lekagul_traffic %>%
+  filter(car_id == "20153408043401-757") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
-    color = ~car_id) %>%
-    layout(
-      title = "Movements of ID 20153408043401-757",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    type = "scatter",
+    mode = "markers",
+    color = ~car_id
+  ) %>%
+  layout(
+    title = "Movements of ID 20153408043401-757",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig7 <- fig7 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig7
 ```
 
@@ -445,31 +468,37 @@ fig7
 Like ID 20154519024544-322, this vehicle also goes to camping 4 by way of general-gate 7 and is at camping 4 for 10 days. Except instead of exiting entrance 0 where they came in, they go out entrance 2 on the other side of the park, which is strange for how out of the way entrance 2 seems to the rest of their movements. See animation below.
 
 ```{r}
-#plot of movements of id 20153628063656-228
-fig8 <- lekagul_traffic %>% 
-  filter(car_id == "20153628063656-228") %>% 
-  plot_ly(x = ~X,
+# plot of movements of id 20153628063656-228
+fig8 <- lekagul_traffic %>%
+  filter(car_id == "20153628063656-228") %>%
+  plot_ly(
+    x = ~X,
     y = ~Y,
     frame = ~datetime,
-    type = 'scatter',
-    mode = 'markers',
-    color = ~car_id) %>%
-    layout(
-      title = "Movements of ID 20153628063656-228",
-      images = list(source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
-           xref = "x",
-           yref = "y",
-           x = 0,
-           y = 200,
-           sizex = 200,
-           sizey = 200,
-           sizing = "stretch",
-           opacity = 1,
-           layer = "below")) 
+    type = "scatter",
+    mode = "markers",
+    color = ~car_id
+  ) %>%
+  layout(
+    title = "Movements of ID 20153628063656-228",
+    images = list(
+      source = "https://raw.githubusercontent.com/mariumtapal/sds325-dc3/master/data/Sensor%20Data/MapLargeLabels.jpg",
+      xref = "x",
+      yref = "y",
+      x = 0,
+      y = 200,
+      sizex = 200,
+      sizey = 200,
+      sizing = "stretch",
+      opacity = 1,
+      layer = "below"
+    )
+  )
 
 fig8 <- fig8 %>% layout(
-    xaxis = list(range = c(0, 200)),
-    yaxis = list(range = c(0, 200)))
+  xaxis = list(range = c(0, 200)),
+  yaxis = list(range = c(0, 200))
+)
 fig8
 ```
 
@@ -484,19 +513,20 @@ For type 4, the typical range of movements was between 3 and 14.
 
 For types 5 and 6, the typical range of movements was between 2 and 9.
 
-## Some activities may deviate from an established pattern or are just difficult to explain from what you know of a situation. Describe any unusual patterns (either single day or multiple days) and highlight why you find them unusual.
-
 ## What are the top 3 patterns you discovered that you suspect could be most impactful to bird life in the preserve?
 
 In looking at the multi-day movements of different vehicles in the preserve, we noticed that several of the vehicles with large numbers of movements passed through general-gate 7 when it seemed somewhat out of their way to do so. Because general-gate 7 is nearby several of the sensors, we thought this could be a location for chemical dumping, which would heavily impact the bird life. 
 
 Additionally, there were a couple vehicles that went in or out entrance 3, which is right around all of the factories and sensors and could be further related to chemical dumping.
 
-# What does the Sensor Data tell us?
+# What does the Sensor Data tell us? Turning your attention to the sensor data, characterize the sensors’ performance and operation. Are they all working properly?
 
-## Turning your attention to the sensor data, characterize the sensors’ performance and operation. Are they all working properly?
+The sensor data was difficult to work with because it was unclear how the wind direction and overall patterns interfered with the chemicals. It seems like some chemicals particularly peak in December, which may be an indication of a leak in the winter. Is that related to weather? That is unclear.
 
-## Can you detect any unexpected behaviors of the sensors by analyzing the readings they capture?
+```{r, out.width="30%"}
+myimages <- list.files("images/", pattern = ".png", full.names = TRUE)
+knitr::include_graphics(myimages)
+```
 
 # What about the chemicals did we find?
 
@@ -535,7 +565,7 @@ summary_stats <- summary_stats %>% mutate(range = max - min)
 summary_stats <- summary_stats[, c(10, 11, 1, 2, 3, 4, 5, 6, 7, 8, 9)]
 
 # fix row names
-rownames(summary_stats)<-c("1","2","3","4")
+rownames(summary_stats) <- c("1", "2", "3", "4")
 # print stats
 summary_stats %>%
   select(-c(n, missing)) %>%
@@ -555,8 +585,11 @@ From the "Sensor Readings by Chemical Type" graph above, it looks like an averag
 ``` {r}
 d1 <- sensor_data %>% filter(chemical == "Methylosmolene" & reading >= 4)
 ggplotly(ggplot(d1, aes(x = date_time, y = reading, color = monitor)) +
-  geom_point() + labs(x = "Month", y = "Monitor Reading", 
-                       title = "Sensor Readings by Monitor for Methylosmolene"))
+  geom_point() +
+  labs(
+    x = "Month", y = "Monitor Reading",
+    title = "Sensor Readings by Monitor for Methylosmolene"
+  ))
 ```
 
 Most of the higher readings are coming from monitor 6 in April and December!
@@ -568,8 +601,11 @@ Similar to Methylosmolene, the average reading also looks like about 4 parts per
 ``` {r}
 d2 <- sensor_data %>% filter(chemical == "AGOC-3A" & reading >= 4)
 ggplotly(ggplot(d2, aes(x = date_time, y = reading, color = monitor)) +
-  geom_point() + labs(x = "Month", y = "Monitor Reading", 
-                       title = "Sensor Readings by Monitor for AGOC-3A"))
+  geom_point() +
+  labs(
+    x = "Month", y = "Monitor Reading",
+    title = "Sensor Readings by Monitor for AGOC-3A"
+  ))
 ```
 
 Again, a lot of the higher readings are at monitor 6, especially in April!
@@ -632,4 +668,6 @@ We are not suspicious of the Roadrunner Fitness Electronics and Indigo Sol Board
 
 The sensors 3 and 6 are also quite close in proximity to the Kasios and Radiance factories.
 
-## For the factories you identified, describe any observed patterns of operation revealed in the data.
+# Conclusion
+
+Overall, we wish we had more time to explore but we do believe there is something suspicious in regards to the companies and the chemicals being released.
