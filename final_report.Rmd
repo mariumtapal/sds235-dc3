@@ -120,6 +120,10 @@ Since vehicle ID 20154519024544-322 had the highest amount of travel, we chose t
 The most common destination for all vehicle ID 20154519024544-322 was camping4 with 32 visits.  Entrance4, general-gate1, general-gate2, general-gate4, general-gate5, general-gate7, ranger-stop0 and ranger-stop2 all saw 31 visits from this particular vehicle.  Entrance1 only saw one visit from vehicle ID 20154519024544-322.
 
 ```{r}
+id_20154519024544_322 <- lekagul_sensor_data %>%
+  filter(id == "20154519024544-322")
+id_20154519024544_322
+
 common_gate_20154519024544_322 <- id_20154519024544_322 %>%
   count(gate, sort = TRUE) %>%
   filter(rank(desc(n)) > 0)
@@ -131,6 +135,11 @@ common_gate_20154519024544_322
 In analyzing vehicle ID 20154519024544-322’s travel patterns, we realized that their movement is very regular.  It seems to be the case that the number of days between travel is somewhat constant.
 
 ```{r}
+lekagul_dateparse <- lekagul_sensor_data %>%
+  mutate(date = format(Timestamp, "%m/%d/%y"),
+         time_24 = format(Timestamp, "%H:%M:%S"))
+lekagul_dateparse
+
 # making day column and converting it to integer value
 day_20154519024544_322 <- lekagul_dateparse %>%
   mutate(day = format(Timestamp, "%d")) %>%
